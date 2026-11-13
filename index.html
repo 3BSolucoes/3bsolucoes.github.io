@@ -367,7 +367,7 @@ const PUBLIC=!IS_GESTAO;let selCats=new Set();
 try{if(PUBLIC){sel=null;(JSON.parse(localStorage.getItem("cat3d_cats")||"[]")||[]).forEach(c=>{if(cats[c])selCats.add(c)})}}catch(e){}
 const $=id=>document.getElementById(id);
 const nNew=D.filter(d=>d.new).length;
-if(PUBLIC){document.body.classList.add("pub");document.querySelector("header h1").innerHTML=`<span class="brand-mark" aria-hidden="true">3B</span><span class="brand-txt">3B Soluções Criativas<small>Catálogo de peças impressas em 3D</small></span>`;$("sub").innerHTML=`<span class="tipbox"><b>Gostou de algum item?</b> Clique em <b>Compartilhar</b> e envie para o vendedor. Itens sem preço: toque em <b>Peça um orçamento</b>.</span>`;const lt=$("linha");if(lt){lt.checked=false;lt.closest("label").style.display="none"}}
+if(PUBLIC){document.body.classList.add("pub");document.querySelector("header h1").innerHTML=`<span class="brand-mark" aria-hidden="true">3B</span><span class="brand-txt">3B Soluções Criativas<small>Catálogo de peças impressas em 3D</small></span>`;$("sub").innerHTML=`<span class="tipbox"><b>Gostou de algum item?</b> Clique em <b>Compartilhar</b> e envie para o vendedor.</span>`;const lt=$("linha");if(lt){lt.checked=false;lt.closest("label").style.display="none"}}
 else $("sub").textContent=`${D.length} modelos, ${T.length} com foto. ${nNew} adicionados na última atualização. Filtre por categoria ou busque por qualquer palavra do nome.`;
 $("hint").textContent=local?"Clique em “Abrir pasta” para ir até os arquivos.":owner?"Modo PC: “Copiar caminho” copia o endereço da pasta para colar no Explorador.":"";
 function chips(){
