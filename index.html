@@ -383,7 +383,7 @@ function render(){
   const nov=$("nov").checked,foto=$("foto").checked,preco=$("preco").checked,linha=$("linha").checked,ord=$("ord").value;
   let r=D.filter(d=>(!sel||d.c===sel)&&(!selCats.size||selCats.has(d.c))&&(!nov||d.new)&&(!foto||d.t!==undefined)&&(!preco||precosDe(d).v)&&(!linha||d.pl)&&costFilter(d)&&terms.every(t=>/^#\d+$/.test(t)?d.id===+t.slice(1):d.k.includes(t)));
   r=ord==="az"?r.sort((a,b)=>a.n.localeCompare(b.n,"pt")):r.sort((a,b)=>a.c.localeCompare(b.c,"pt")||a.n.localeCompare(b.n,"pt"));
-  if(PUBLIC&&!selCats.size&&!terms.length&&!nov&&!foto&&!preco){const com=r.filter(d=>precosDe(d).v);if(com.length)r=com.concat(r.filter(d=>!precosDe(d).v))}
+  if(PUBLIC){const com=r.filter(d=>precosDe(d).v);if(com.length)r=com.concat(r.filter(d=>!precosDe(d).v))}
   $("count").textContent=PUBLIC?(r.length?(selCats.size||terms.length||nov||foto||preco?`${r.length} ${r.length===1?"item encontrado":"itens encontrados"}`:""):""):`${r.length} de ${D.length} modelos`;
   $("empty").hidden=r.length>0;
   const frag=document.createDocumentFragment();
