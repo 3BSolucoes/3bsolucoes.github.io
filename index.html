@@ -636,6 +636,14 @@ async function initCost(){
   db.collection("fichas").onSnapshot(s=>{COST.fichas={};s.docs.forEach(x=>COST.fichas[x.id]=x.data());bb=true;done()},()=>{bb=true;done()});
 }
 initCost();
+/* Catálogo público: preços ao vivo vindos das fichas técnicas (Supabase) */
+if(PUBLIC&&!local){(async()=>{try{
+  const r=await fetch("https://ynxjuziprxtvbupnyvgr.supabase.co/rest/v1/catalogo_publico?select=id,preco,preco_desc,alt&or=(preco.gt.0,alt.neq.%5B%5D)",{headers:{apikey:"sb_publishable_jQoOUi-DDrvMxJbPy96Dog_NIY6zJna"}});
+  if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;
+  rows.forEach(x=>{const d=D[x.id-1];if(!d)return;const p=+x.preco||0;
+    if(p>0)d.v=(x.preco_desc?x.preco_desc+": ":"")+fmtR(p);
+    const va=(x.alt||[]).filter(a=>a&&+a.preco>0).map(a=>(a.desc?a.desc+": ":"")+fmtR(+a.preco));d.va=va;if(!va.length)delete d.va});
+  render()}catch(e){}})()}
 
 /* ===== Gestão: menu lateral (Catálogo, Insumos, Pedidos) e categorias na vertical ===== */
 const STATUS=["Pendente","Produzindo","Aguardando entrega","Entregue","Pago"];
