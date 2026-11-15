@@ -411,7 +411,7 @@ chips();render();
 
 /* Compartilhar um modelo: link com #m<código> + nome e código no texto */
 const PUB="https://3bsolucoes.github.io/";
-const ADMIN="https://claude.ai/artifact/C7nr8tcyLMbcWcwrkB177s";
+const ADMIN="https://gestao-3b.vercel.app/";
 const toast=document.createElement("div");toast.className="toast";toast.hidden=true;toast.setAttribute("role","status");document.body.appendChild(toast);
 let tt;function showToast(msg,copyText){clearTimeout(tt);toast.textContent=msg;if(copyText){const i=document.createElement("input");i.value=copyText;i.readOnly=true;toast.appendChild(i);setTimeout(()=>i.select(),50)}toast.hidden=false;tt=setTimeout(()=>toast.hidden=true,copyText?9000:2600)}
 async function shareItem(d){
@@ -603,13 +603,13 @@ function renderFicha(){
   b.querySelectorAll(".fAPreco").forEach(x=>x.oninput=()=>{f.alt[+x.dataset.k].preco=num(x.value)});
   b.querySelector("#fSalvar").onclick=async()=>{const data={modelo:d.n,itens:f.itens.filter(i=>i.insumo).map(i=>({insumo:i.insumo,qtd:num(i.qtd)})),maquina:f.maquina||"",minutos:Math.round(num(f.minutos)),extra:num(f.extra),lote:Math.max(1,Math.round(num(f.lote)||1)),obs:f.obs||"",precoDesc:(f.precoDesc||"").trim(),preco:num(f.preco),alt:f.alt.map(a=>({desc:(a.desc||"").trim(),preco:num(a.preco)})).filter(a=>a.preco>0||a.desc),custo:Math.round(calcFicha(f).total*100)/100,atualizado:new Date().toISOString()};
     const fm={set textContent(t){FMSG=t;const e=dlgFicha.querySelector("#fMsg");if(e)e.textContent=t}};try{await COST.db.collection("fichas").doc("m"+fichaId).set(data);fm.textContent="Ficha salva."}catch(err){fm.textContent="Não foi possível salvar: "+(err.message||err.code);return}
-    fm.textContent="Ficha salva. Para os clientes verem os preços novos, peça ao Claude: “atualizar os preços no catálogo”.";};
+    fm.textContent="Ficha salva. O preço já aparece no catálogo dos clientes (3bsolucoes.github.io).";};
   const del=b.querySelector("#fDel");if(del)del.onclick=async()=>{if(!confirm("Apagar a ficha técnica deste modelo?"))return;try{await COST.db.collection("fichas").doc("m"+fichaId).delete();dlgFicha.close()}catch(err){alert("Não foi possível apagar.")}};
   upd()}
 
 function noDbMsg(){return local
   ?`<p class="warnbox">A ficha técnica e os insumos ficam guardados no catálogo online. Abra pelo link no navegador deste computador para lançar os custos.</p><p><a class="open" href="${ADMIN}#pc" target="_blank" rel="noopener">Abrir o catálogo de gestão</a></p>`
-  :`<p class="warnbox">Carregando os dados de custo… Se não aparecer, confirme que você está logado no claude.ai com a sua conta.</p>`}
+  :`<p class="warnbox">Carregando os dados de custo… Se não aparecer, recarregue a página ou entre de novo na Gestão.</p>`}
 
 /* ----- botões e ligação com o catálogo ----- */
 const tools=document.createElement("div");tools.className="ctools";tools.hidden=true;
