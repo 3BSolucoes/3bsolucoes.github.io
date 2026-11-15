@@ -363,7 +363,7 @@ const IS_GESTAO=/Gestão/.test(document.title);if(IS_GESTAO)owner=true;
 const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
 D.forEach((d,i)=>{d.id=i+1;d.k=norm([d.n,d.c,d.o,d.g,d.x,d.h,d.lw,d.cp,d.pf,d.v,d.ob].filter(Boolean).join(" ").replace(/[_+]/g," "))});
 const cats={};D.forEach(d=>cats[d.c]=(cats[d.c]||0)+1);
-const catList=Object.keys(cats).sort((a,b)=>a==="Outros"?1:b==="Outros"?-1:cats[b]-cats[a]);
+const catList=Object.keys(cats).sort((a,b)=>a==="Outros"?1:b==="Outros"?-1:a.localeCompare(b,"pt-BR",{sensitivity:"base"}));
 let sel=null;
 try{sel=localStorage.getItem("cat3d")||null;if(sel&&!cats[sel])sel=null}catch(e){}
 const PUBLIC=!IS_GESTAO;let selCats=new Set();
