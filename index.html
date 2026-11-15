@@ -440,6 +440,13 @@ function apply(){lbimg.style.transform=`translate(${tx}px,${ty}px) scale(${sc})`
 function clampPan(){const r=lbs.getBoundingClientRect(),w=lbimg.offsetWidth*sc,h=lbimg.offsetHeight*sc;const mx=Math.max(0,(w-r.width)/2),my=Math.max(0,(h-r.height)/2);tx=Math.min(mx,Math.max(-mx,tx));ty=Math.min(my,Math.max(-my,ty))}
 function zoomAt(f,cx,cy){const r=lbs.getBoundingClientRect();const ox=cx-r.left-r.width/2,oy=cy-r.top-r.height/2;const ns=Math.min(8,Math.max(1,sc*f));const k=ns/sc;tx=ox-(ox-tx)*k;ty=oy-(oy-ty)*k;sc=ns;if(sc===1){tx=0;ty=0}clampPan();apply()}
 function zoomCenter(f){const r=lbs.getBoundingClientRect();zoomAt(f,r.left+r.width/2,r.top+r.height/2)}
+/* Botão "voltar" do celular: fecha o que estiver aberto (foto, categorias, janelas, telas da gestão) em vez de sair do app */
+const BK=[];let bkSkip=0;
+function bkPush(f){BK.push(f);try{history.pushState({bk:BK.length},"")}catch(e){}}
+function bkDone(f){const i=BK.lastIndexOf(f);if(i<0)return;BK.splice(i,1);bkSkip++;try{history.back()}catch(e){bkSkip--}}
+window.addEventListener("popstate",()=>{if(bkSkip>0){bkSkip--;return}const f=BK.pop();if(f)f()});
+if(window.HTMLDialogElement){const _sm=HTMLDialogElement.prototype.showModal;HTMLDialogElement.prototype.showModal=function(){_sm.call(this);const d=this;let viaBack=false;const f=()=>{viaBack=true;d.close()};bkPush(f);
+  d.addEventListener("close",function h(){d.removeEventListener("close",h);if(!viaBack)bkDone(f)})}}
 function openLb(d){
   lastFocus=document.activeElement;sc=1;tx=0;ty=0;apply();
   $("lbt").textContent=d.n;
@@ -453,13 +460,12 @@ function openLb(d){
     $("lbn").textContent="";
   }
   lbimg.alt=d.n;lb.hidden=false;document.body.style.overflow="hidden";$("lbx").focus();
-  try{history.pushState({lb:1},"");lbPushed=true}catch(e){lbPushed=false}
+  bkPush(lbBack);
 }
-let lbPushed=false;
+const lbBack=()=>hideLb();
 function hideLb(){lb.hidden=true;lbimg.removeAttribute("src");document.body.style.overflow="";if(lastFocus)lastFocus.focus()}
 /* Fechar pelo botão/Esc volta o histórico; o "voltar" do celular dispara popstate e só fecha a foto */
-function closeLb(){if(lb.hidden)return;if(lbPushed){lbPushed=false;try{history.back();return}catch(e){}}hideLb()}
-window.addEventListener("popstate",()=>{if(!lb.hidden){lbPushed=false;hideLb()}});
+function closeLb(){if(lb.hidden)return;bkDone(lbBack);hideLb()}
 $("grid").addEventListener("click",e=>{const im=e.target.closest(".thumb img");if(!im)return;const c=im.closest(".card");if(c&&c._d)openLb(c._d)});
 $("lbx").onclick=closeLb;$("lbi").onclick=()=>zoomCenter(1.5);$("lbo").onclick=()=>zoomCenter(1/1.5);
 document.addEventListener("keydown",e=>{if(lb.hidden)return;if(e.key==="Escape")closeLb();else if(e.key==="+"||e.key==="=")zoomCenter(1.5);else if(e.key==="-")zoomCenter(1/1.5)});
@@ -672,7 +678,9 @@ if(IS_GESTAO){
   $("chips").addEventListener("click",()=>{if(VIEW!=="cat")setView("cat")});
   const h=location.hash;setView(h==="#insumos"?"ins":h==="#pedidos"?"ped":h==="#vendas"?"dash":"cat",true);
 }
-function setView(v,init){VIEW=v;
+const viewBack=()=>setView("cat",false,true);
+function setView(v,init,fromBack){const prev=VIEW;VIEW=v;
+  if(!init&&!fromBack){if(prev==="cat"&&v!=="cat")bkPush(viewBack);else if(prev!=="cat"&&v==="cat")bkDone(viewBack)}
   $("viewCat").hidden=v!=="cat";$("viewIns").hidden=v!=="ins";$("viewPed").hidden=v!=="ped";$("viewDash").hidden=v!=="dash";
   document.querySelectorAll(".gnav button").forEach(b=>b.setAttribute("aria-current",String(b.dataset.v===v)));
   if(v==="ins"){editIns=null;renderInsumos()}
@@ -864,7 +872,8 @@ function catPick(){
     document.querySelector(".controls").insertBefore(w,document.querySelector(".controls").children[1]);
     const btn=w.querySelector(".cpk-btn"),pop=w.querySelector(".cpk-pop"),q=w.querySelector(".cpk-q");
     const fit=()=>{const L=w.querySelector(".cpk-list");L.style.maxHeight="";const r=pop.getBoundingClientRect(),vh=(window.visualViewport?window.visualViewport.height:window.innerHeight);const over=r.bottom-(vh-12);if(over>0)L.style.maxHeight=Math.max(160,L.clientHeight-over)+"px";const r2=pop.getBoundingClientRect();if(r2.bottom>vh-12)window.scrollBy({top:r2.bottom-(vh-12),behavior:"smooth"})};
-    const open=v=>{pop.hidden=!v;btn.setAttribute("aria-expanded",String(v));if(v){q.value="";list();fit();setTimeout(fit,350)}};
+    const cpBack=()=>{pop.hidden=true;btn.setAttribute("aria-expanded","false")};
+    const open=v=>{const was=!pop.hidden;pop.hidden=!v;btn.setAttribute("aria-expanded",String(v));if(v){q.value="";list();fit();setTimeout(fit,350)}if(v&&!was)bkPush(cpBack);if(!v&&was)bkDone(cpBack)};
     if(window.visualViewport)window.visualViewport.addEventListener("resize",()=>{if(!pop.hidden)fit()});
     btn.onclick=()=>open(pop.hidden);
     w.querySelector(".cpk-ok").onclick=()=>open(false);
