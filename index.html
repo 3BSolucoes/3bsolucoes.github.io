@@ -391,7 +391,9 @@ let owner=false;
 try{if(location.hash==="#pc")localStorage.setItem("cat3d_pc","1");if(location.hash==="#nopc")localStorage.removeItem("cat3d_pc");owner=localStorage.getItem("cat3d_pc")==="1"}catch(e){}
 const IS_GESTAO=/Gestão/.test(document.title);if(IS_GESTAO)owner=true;
 const norm=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
-D.forEach((d,i)=>{d.id=i+1;d.k=norm([d.n,d.c,d.o,d.g,d.x,d.h,d.lw,d.cp,d.pf,d.v,d.ob].filter(Boolean).join(" ").replace(/[_+]/g," "))});
+const idxK=d=>{d.k=norm([d.n,d.c,d.o,d.g,d.x,d.h,d.lw,d.cp,d.pf,d.v,d.ob,d.dsc].filter(Boolean).join(" ").replace(/[_+]/g," "))};
+D.forEach((d,i)=>{d.id=i+1;idxK(d)});
+function renomeia(d,nome){nome=(nome||"").trim();if(!d.n0)d.n0=d.n;const alvo=nome||d.n0;if(alvo!==d.n){d.n=alvo;idxK(d)}}
 const cats={};D.forEach(d=>cats[d.c]=(cats[d.c]||0)+1);
 const catList=Object.keys(cats).sort((a,b)=>a==="Outros"?1:b==="Outros"?-1:a.localeCompare(b,"pt-BR",{sensitivity:"base"}));
 let sel=null;
@@ -603,9 +605,9 @@ function openFicha(d){fichaId=d.id;FMSG="";const f=COST.fichas["m"+d.id];
   if(fichaDraft.preco==null){const pv=precoVenda(d);fichaDraft.preco=pv||"";fichaDraft.precoDesc=d.v&&String(d.v).includes(":")?String(d.v).slice(0,String(d.v).lastIndexOf(":")).trim():""}
   fichaDraft.alt=(fichaDraft.alt||[]).slice(0,3);while(fichaDraft.alt.length<3)fichaDraft.alt.push({desc:"",preco:""});
   dlgFicha.querySelector("h2").textContent=`Ficha técnica · #${d.id} ${d.n}`;renderFicha();dlgFicha.showModal()}
-async function salvarFicha(okMsg){const d=D[fichaId-1],f=fichaDraft;const data={modelo:d.n,itens:f.itens.filter(i=>i.insumo).map(i=>({insumo:i.insumo,qtd:num(i.qtd)})),maquina:f.maquina||"",minutos:Math.round(num(f.minutos)),extra:num(f.extra),lote:Math.max(1,Math.round(num(f.lote)||1)),obs:f.obs||"",precoDesc:(f.precoDesc||"").trim(),preco:num(f.preco),alt:f.alt.map(a=>({desc:(a.desc||"").trim(),preco:num(a.preco)})).filter(a=>a.preco>0||a.desc),custo:Math.round(calcFicha(f).total*100)/100,atualizado:new Date().toISOString(),midias:(f.midias||[]),capa:f.capa||""};if(f.descricao!==undefined)data.descricao=String(f.descricao).trim();
+async function salvarFicha(okMsg){const d=D[fichaId-1],f=fichaDraft;const data={modelo:(f.nome!=null?f.nome:d.n).trim()||d.n0||d.n,itens:f.itens.filter(i=>i.insumo).map(i=>({insumo:i.insumo,qtd:num(i.qtd)})),maquina:f.maquina||"",minutos:Math.round(num(f.minutos)),extra:num(f.extra),lote:Math.max(1,Math.round(num(f.lote)||1)),obs:f.obs||"",precoDesc:(f.precoDesc||"").trim(),preco:num(f.preco),alt:f.alt.map(a=>({desc:(a.desc||"").trim(),preco:num(a.preco)})).filter(a=>a.preco>0||a.desc),custo:Math.round(calcFicha(f).total*100)/100,atualizado:new Date().toISOString(),midias:(f.midias||[]),capa:f.capa||""};if(f.descricao!==undefined)data.descricao=String(f.descricao).trim();
   const fm=t=>{FMSG=t;const e=dlgFicha.querySelector("#fMsg");if(e)e.textContent=t};
-  try{await COST.db.collection("fichas").doc("m"+fichaId).set(data);fm(okMsg);return true}catch(err){fm("Não foi possível salvar: "+(err.message||err.code));return false}}
+  try{await COST.db.collection("fichas").doc("m"+fichaId).set(data);renomeia(d,data.modelo);dlgFicha.querySelector("h2").textContent=`Ficha técnica · #${d.id} ${d.n}`;fm(okMsg);return true}catch(err){fm("Não foi possível salvar: "+(err.message||err.code));return false}}
 const rnd=()=>Math.random().toString(36).slice(2,8);
 function toJpeg(src,max,q){return new Promise(res=>{let w=src.videoWidth||src.width,h=src.videoHeight||src.height;const r=Math.min(1,max/Math.max(w,h));w=Math.round(w*r);h=Math.round(h*r);
   const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(src,0,0,w,h);c.toBlob(res,"image/jpeg",q)})}
@@ -645,8 +647,9 @@ function renderFicha(){
   <div class="row"><label>Máquina<select id="fMaq"><option value="">Escolha…</option>${optsMaq.map(([id,i])=>`<option value="${id}"${id===f.maquina?" selected":""}>${esc(i.nome)} (${brl(num(i.precoHora))}/h)</option>`).join("")}</select></label>
   <label>Tempo de impressão<span class="tm"><input id="fH" inputmode="numeric" value="${Math.floor(m/60)}"> h <input id="fM" inputmode="numeric" value="${m%60}"> min</span></label>
   <label>Outros custos (R$)<input id="fExtra" inputmode="decimal" value="${fmtNum(f.extra||"")}" placeholder="0,00"></label></div>
-  <h3>Descrição no catálogo</h3>
-  <label class="full"><textarea id="fDesc" rows="3" placeholder="Texto que aparece no card do catálogo (deixe em branco para não mostrar nada)">${esc(f.descricao!=null?f.descricao:(d.ob||""))}</textarea></label>
+  <h3>Catálogo</h3>
+  <label class="full">Nome do modelo<input id="fNome" value="${esc(f.nome!=null?f.nome:d.n)}" placeholder="${esc(d.n0||d.n)}"></label>
+  <label class="full">Descrição<textarea id="fDesc" rows="3" placeholder="Texto que aparece no card do catálogo (deixe em branco para não mostrar nada)">${esc(f.descricao!=null?f.descricao:(d.ob||""))}</textarea></label>
   <h3>Fotos e vídeos</h3>
   <p class="muted" style="margin-top:0">A capa é a imagem que aparece no card. As demais aparecem ao abrir a foto no catálogo.</p>
   <div class="mgrid">${d.t!==undefined?`<div class="mt${!f.capa?" capa":""}"><img alt="" src="${TH(d)}">${!f.capa?`<span class="tc">Capa</span>`:""}<div class="mb"><span>Foto original</span>${f.capa?`<button type="button" class="lnk" data-capa="-1">Usar como capa</button>`:""}</div></div>`:""}${(f.midias||[]).map((m,k)=>{const c=f.capa===m.u;return `<div class="mt${c?" capa":""}">${m.tipo==="video"?(m.th?`<img alt="" src="${esc(m.th)}">`:`<video src="${esc(m.u)}" muted preload="metadata"></video>`)+`<span class="tv">▶ vídeo</span>`:`<img alt="" src="${esc(m.th||m.u)}">`}${c?`<span class="tc">Capa</span>`:""}<div class="mb">${m.tipo==="img"&&!c?`<button type="button" class="lnk" data-capa="${k}">Usar como capa</button>`:"<span></span>"}<button type="button" class="lnk del" data-mrm="${k}">Remover</button></div></div>`}).join("")}</div>
@@ -671,6 +674,7 @@ function renderFicha(){
   b.querySelector("#fLote").oninput=e=>{f.lote=Math.max(1,Math.round(num(e.target.value))||1);upd()};
   b.querySelector("#fObs").oninput=e=>{f.obs=e.target.value};
   b.querySelector("#fDesc").oninput=e=>{f.descricao=e.target.value};
+  b.querySelector("#fNome").oninput=e=>{f.nome=e.target.value};
   const upMsg=t=>{const e=b.querySelector("#fUpMsg");if(e)e.textContent=t};
   b.querySelectorAll("[data-capa]").forEach(x=>x.onclick=async()=>{const k=+x.dataset.capa;f.capa=k<0?"":f.midias[k].u;renderFicha();await salvarFicha("Capa atualizada.")});
   b.querySelectorAll("[data-mrm]").forEach(x=>x.onclick=async()=>{const k=+x.dataset.mrm,m=f.midias[k];if(!confirm(m.tipo==="video"?"Remover este vídeo?":"Remover esta foto?"))return;
@@ -718,19 +722,19 @@ async function initCost(){
   let a=false,bb=false,cc=!IS_GESTAO;const done=()=>{if(a&&bb&&cc){COST.ready=true;render();if(insShown())renderInsumos();if(pedShown())renderPedidos();if(dashShown())renderDash();if(dlgFicha.open&&fichaDraft)renderFicha()}};
   db.collection("insumos").onSnapshot(s=>{COST.insumos={};s.docs.forEach(x=>COST.insumos[x.id]=x.data());a=true;done()},()=>{a=true;done()});
   if(IS_GESTAO)db.collection("pedidos").onSnapshot(s=>{COST.pedidos={};s.docs.forEach(x=>COST.pedidos[x.id]=x.data());cc=true;done()},()=>{cc=true;done()});
-  db.collection("fichas").onSnapshot(s=>{COST.fichas={};s.docs.forEach(x=>COST.fichas[x.id]=x.data());bb=true;done()},()=>{bb=true;done()});
+  db.collection("fichas").onSnapshot(s=>{COST.fichas={};s.docs.forEach(x=>COST.fichas[x.id]=x.data());D.forEach(d=>{const f=COST.fichas["m"+d.id];if(f||d.n0)renomeia(d,f&&f.modelo)});bb=true;done()},()=>{bb=true;done()});
 }
 initCost();
 /* Catálogo público: preços ao vivo vindos das fichas técnicas (Supabase) */
 if(PUBLIC&&!local){(async()=>{try{
   const B="https://ynxjuziprxtvbupnyvgr.supabase.co/rest/v1/catalogo_publico?select=",H={headers:{apikey:"sb_publishable_jQoOUi-DDrvMxJbPy96Dog_NIY6zJna"}};
-  let r=await fetch(B+"id,preco,preco_desc,alt,descricao,midias,capa&or=(preco.gt.0,alt.neq.%5B%5D,descricao.not.is.null,midias.neq.%5B%5D)",H);
+  let r=await fetch(B+"id,nome,preco,preco_desc,alt,descricao,midias,capa",H);
   if(!r.ok)r=await fetch(B+"id,preco,preco_desc,alt&or=(preco.gt.0,alt.neq.%5B%5D)",H);
   if(!r.ok)return;const rows=await r.json();if(!Array.isArray(rows))return;
   rows.forEach(x=>{const d=D[x.id-1];if(!d)return;const p=+x.preco||0;
     if(p>0)d.v=(x.preco_desc?x.preco_desc+": ":"")+fmtR(p);
     const va=(x.alt||[]).filter(a=>a&&+a.preco>0).map(a=>(a.desc?a.desc+": ":"")+fmtR(+a.preco));d.va=va;if(!va.length)delete d.va;
-    if(x.descricao!=null)d.dsc=x.descricao;if(Array.isArray(x.midias)&&x.midias.length)d.md=x.midias;if(x.capa)d.capa=x.capa});
+    if(x.nome)renomeia(d,x.nome);if(x.descricao!=null){d.dsc=x.descricao;idxK(d)}if(Array.isArray(x.midias)&&x.midias.length)d.md=x.midias;if(x.capa)d.capa=x.capa});
   render()}catch(e){}})()}
 
 /* ===== Gestão: menu lateral (Catálogo, Insumos, Pedidos) e categorias na vertical ===== */
