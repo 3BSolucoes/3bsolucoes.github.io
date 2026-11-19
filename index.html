@@ -424,8 +424,8 @@ function render(){
   let P;
   for(const d of r){
     const el=document.createElement("article");el.className="card";
-    const X=extraDe(d),cv=X.capa||(d.t===undefined?X.md.find(m=>m.tipo==="img"):null),nG=(d.t!==undefined?1:0)+X.md.length;
-    const img=(cv?`<img loading="lazy" alt="${esc(d.n)}" src="${esc(cv.th||cv.u)}">`:d.t!==undefined?`<img loading="lazy" alt="${esc(d.n)}" src="${TH(d)}">`:`<span class="none">sem foto</span>`)+(nG>1?`<span class="nmid">${X.md.some(m=>m.tipo==="video")?"▶ ":""}${nG} mídias</span>`:"");
+    const X=extraDe(d),cv=X.capa||(!X.orig?X.md.find(m=>m.tipo==="img"):null),nG=(X.orig?1:0)+X.md.length;
+    const img=(cv?`<img loading="lazy" alt="${esc(d.n)}" src="${esc(cv.th||cv.u)}">`:X.orig?`<img loading="lazy" alt="${esc(d.n)}" src="${TH(d)}">`:`<span class="none">sem foto</span>`)+(nG>1?`<span class="nmid">${X.md.some(m=>m.tipo==="video")?"▶ ":""}${nG} mídias</span>`:"");
     el._d=d;
     const href=d.p.replace(/\\/g,"/").split("/").map(encodeURIComponent).join("/")+"/";
     el.innerHTML=`<div class="thumb">${img}</div><div class="info"><div class="name">${esc(d.n)} <span class="code">#${d.id}</span></div><div class="cat">${esc(d.c)}${d.pl&&!PUBLIC?` <span class="linha">Produto de linha</span>`:""}</div>${(P=precosDe(d),d.h||d.lw||d.cp||d.pf||P.v)?`<div class="specs">${d.h?`<span>Altura: <b>${esc(d.h)}</b></span>`:""}${d.lw?`<span>Largura: <b>${esc(d.lw)}</b></span>`:""}${d.cp?`<span>Comprimento: <b>${esc(d.cp)}</b></span>`:""}${d.pf?`<span>Profundidade: <b>${esc(d.pf)}</b></span>`:""}${P.v?`<span class="price">${esc(P.v)}</span>`:""}${P.va.map(a=>`<span class="price alt">${esc(a)}</span>`).join("")}</div>`:""}${PUBLIC&&!P.v?`<button type="button" class="quote" data-id="${d.id}">Peça um orçamento</button>`:""}${X.desc?`<div class="obs">${esc(X.desc)}</div>`:""}${d.o?`<div class="orig" title="Arquivo original">${esc(d.o)}</div>`:""}<div class="foot">${d.x&&!PUBLIC?d.x.split(",").map(x=>`<span class="tag">.${x}</span>`).join(""):""}${d.new?`<span class="tag new">Novo</span>`:""}${d.w?`<span class="tag warn">${esc(d.w)}</span>`:""}${costHtml(d)}<button type="button" class="share" data-id="${d.id}" aria-label="Compartilhar ${esc(d.n)}">Compartilhar</button>${local?`<a class="open" href="${href}">Abrir pasta</a>`:owner?(MOBILE?`<button type="button" class="share path" data-id="${d.id}">Copiar caminho</button>`:`<a class="share open3d" target="_blank" rel="noopener" href="abrir3d://${encodeURIComponent(d.p)}" title="Abre a pasta no Explorador (precisa do abrir3d instalado no PC)">Abrir pasta</a><button type="button" class="share path" data-id="${d.id}" title="Copiar caminho">⧉</button>`):""}</div></div>`;
@@ -481,7 +481,7 @@ window.addEventListener("popstate",()=>{if(bkSkip>0){bkSkip--;return}const f=BK.
 if(window.HTMLDialogElement){const _sm=HTMLDialogElement.prototype.showModal;HTMLDialogElement.prototype.showModal=function(){_sm.call(this);const d=this;let viaBack=false;const f=()=>{viaBack=true;d.close()};bkPush(f);
   d.addEventListener("close",function h(){d.removeEventListener("close",h);if(!viaBack)bkDone(f)})}}
 let GAL=[],gi=0,lbD=null;
-function galeria(d){const X=extraDe(d);const g=[];if(d.t!==undefined)g.push({orig:1,tipo:"img"});X.md.forEach(m=>g.push(m));
+function galeria(d){const X=extraDe(d);const g=[];if(X.orig)g.push({orig:1,tipo:"img"});X.md.forEach(m=>g.push(m));
   if(X.capa){const i=g.indexOf(X.capa);if(i>0){g.splice(i,1);g.unshift(X.capa)}}if(!g.length)g.push({orig:1,tipo:"img"});return g}
 function lbVid(){const v=lbs.querySelector("video");if(v){v.pause();v.remove()}}
 function showG(i){gi=(i+GAL.length)%GAL.length;const m=GAL[gi],d=lbD;sc=1;tx=0;ty=0;apply();lbVid();
@@ -529,9 +529,10 @@ function precosDe(d){var f=(COST&&COST.on&&COST.fichas)?COST.fichas["m"+d.id]:nu
     return {v:f.preco>0?(f.precoDesc?f.precoDesc+": ":"")+fmtR(f.preco):d.v,va:(f.alt||[]).filter(a=>a&&a.preco>0).map(a=>(a.desc?a.desc+": ":"")+fmtR(a.preco))}}
   return {v:d.v,va:d.va||[]}}
 function extraDe(d){const f=(COST&&COST.on&&COST.fichas)?COST.fichas["m"+d.id]:null;const src=f||{descricao:d.dsc,midias:d.md,capa:d.capa};
-  const md=Array.isArray(src.midias)?src.midias.filter(m=>m&&m.u):[];
-  return{desc:src.descricao!=null?src.descricao:d.ob,md,capa:(src.capa&&md.find(m=>m.u===src.capa))||null}}
-function hasFoto(d){const X=extraDe(d);return d.t!==undefined||X.md.some(m=>m.tipo==="img")}
+  const md=Array.isArray(src.midias)?src.midias.filter(m=>m&&m.u):[];const so=semOrig(src);
+  return{orig:d.t!==undefined&&!so,desc:src.descricao!=null?src.descricao:d.ob,md,capa:(src.capa&&md.find(m=>m.u===src.capa))||null}}
+function semOrig(f){return!!f&&Array.isArray(f.midias)&&f.midias.some(m=>m&&m.tipo==="semorig")}
+function hasFoto(d){const X=extraDe(d);return X.orig||X.md.some(m=>m.tipo==="img")}
 function precoPrincipal(d){var f=COST.fichas["m"+d.id];if(f&&f.preco>0)return f.preco;return precoVenda(d)}
 const brl=v=>(isFinite(v)?v:0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const num=s=>{if(typeof s==="number")return isFinite(s)?s:0;let t=String(s??"").trim();if(t.includes(","))t=t.replace(/\./g,"").replace(",",".");const x=parseFloat(t);return isFinite(x)?x:0};
@@ -652,8 +653,8 @@ function renderFicha(){
   <label class="full">Descrição<textarea id="fDesc" rows="3" placeholder="Texto que aparece no card do catálogo (deixe em branco para não mostrar nada)">${esc(f.descricao!=null?f.descricao:(d.ob||""))}</textarea></label>
   <h3>Fotos e vídeos</h3>
   <p class="muted" style="margin-top:0">A capa é a imagem que aparece no card. As demais aparecem ao abrir a foto no catálogo.</p>
-  <div class="mgrid">${d.t!==undefined?`<div class="mt${!f.capa?" capa":""}"><img alt="" src="${TH(d)}">${!f.capa?`<span class="tc">Capa</span>`:""}<div class="mb"><span>Foto original</span>${f.capa?`<button type="button" class="lnk" data-capa="-1">Usar como capa</button>`:""}</div></div>`:""}${(f.midias||[]).map((m,k)=>{const c=f.capa===m.u;return `<div class="mt${c?" capa":""}">${m.tipo==="video"?(m.th?`<img alt="" src="${esc(m.th)}">`:`<video src="${esc(m.u)}" muted preload="metadata"></video>`)+`<span class="tv">▶ vídeo</span>`:`<img alt="" src="${esc(m.th||m.u)}">`}${c?`<span class="tc">Capa</span>`:""}<div class="mb">${m.tipo==="img"&&!c?`<button type="button" class="lnk" data-capa="${k}">Usar como capa</button>`:"<span></span>"}<button type="button" class="lnk del" data-mrm="${k}">Remover</button></div></div>`}).join("")}</div>
-  <div class="upl"><button type="button" class="lnk" id="fUpB">+ Adicionar fotos ou vídeos</button><input type="file" id="fUp" accept="image/*,video/*" multiple hidden><span id="fUpMsg"></span></div>
+  <div class="mgrid">${d.t!==undefined&&!semOrig(f)?`<div class="mt${!f.capa?" capa":""}"><img alt="" src="${TH(d)}">${!f.capa?`<span class="tc">Capa</span>`:""}<div class="mb"><span>Foto original</span>${f.capa?`<button type="button" class="lnk" data-capa="-1">Usar como capa</button>`:""}<button type="button" class="lnk del" data-orm="1">Remover</button></div></div>`:""}${(f.midias||[]).map((m,k)=>{if(!m||!m.u)return"";const c=f.capa===m.u;return `<div class="mt${c?" capa":""}">${m.tipo==="video"?(m.th?`<img alt="" src="${esc(m.th)}">`:`<video src="${esc(m.u)}" muted preload="metadata"></video>`)+`<span class="tv">▶ vídeo</span>`:`<img alt="" src="${esc(m.th||m.u)}">`}${c?`<span class="tc">Capa</span>`:""}<div class="mb">${m.tipo==="img"&&!c?`<button type="button" class="lnk" data-capa="${k}">Usar como capa</button>`:"<span></span>"}<button type="button" class="lnk del" data-mrm="${k}">Remover</button></div></div>`}).join("")}</div>
+  <div class="upl"><button type="button" class="lnk" id="fUpB">+ Adicionar fotos ou vídeos</button><input type="file" id="fUp" accept="image/*,video/*" multiple hidden>${d.t!==undefined&&semOrig(f)?`<button type="button" class="lnk" id="fOrigR">Restaurar foto original</button>`:""}<span id="fUpMsg"></span></div>
   <h3>Preço de venda</h3>
   <div class="row"><label>Descrição (opcional)<input id="fPDesc" value="${esc(f.precoDesc||"")}" placeholder="ex.: Kit com 3 peças"></label><label>Preço (R$)<input id="fPreco" inputmode="decimal" value="${fmtNum(f.preco||"")}" placeholder="0,00"></label></div>
   <p class="muted">Preços alternativos (opcional) — aparecem no catálogo só se preenchidos.</p>
@@ -679,6 +680,9 @@ function renderFicha(){
   b.querySelectorAll("[data-capa]").forEach(x=>x.onclick=async()=>{const k=+x.dataset.capa;f.capa=k<0?"":f.midias[k].u;renderFicha();await salvarFicha("Capa atualizada.")});
   b.querySelectorAll("[data-mrm]").forEach(x=>x.onclick=async()=>{const k=+x.dataset.mrm,m=f.midias[k];if(!confirm(m.tipo==="video"?"Remover este vídeo?":"Remover esta foto?"))return;
     f.midias.splice(k,1);if(f.capa===m.u)f.capa="";renderFicha();if(await salvarFicha("Removido.")&&m.p&&window.sbRemove)sbRemove(m.p)});
+  const orm=b.querySelector("[data-orm]");if(orm)orm.onclick=async()=>{if(!confirm("Remover a foto original deste modelo do catálogo? (o arquivo no PC não é apagado; dá para restaurar depois)"))return;
+    f.midias=(f.midias||[]).concat([{tipo:"semorig"}]);if(!f.capa){const im=f.midias.find(m=>m.tipo==="img"&&m.u);f.capa=im?im.u:""}renderFicha();await salvarFicha("Foto original removida do catálogo.")};
+  const orr=b.querySelector("#fOrigR");if(orr)orr.onclick=async()=>{f.midias=(f.midias||[]).filter(m=>!(m&&m.tipo==="semorig"));renderFicha();await salvarFicha("Foto original restaurada.")};
   b.querySelector("#fUpB").onclick=()=>b.querySelector("#fUp").click();
   b.querySelector("#fUp").onchange=async e=>{const files=[...e.target.files];e.target.value="";if(!files.length)return;
     if(!window.sbUpload){upMsg("O envio de fotos só funciona na Gestão online.");return}
