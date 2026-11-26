@@ -399,14 +399,14 @@ const catList=Object.keys(cats).sort((a,b)=>a==="Outros"?1:b==="Outros"?-1:a.loc
 let sel=null;
 try{sel=localStorage.getItem("cat3d")||null;if(sel&&!cats[sel])sel=null}catch(e){}
 const PUBLIC=!IS_GESTAO;let selCats=new Set();
-try{if(PUBLIC){sel=null;(JSON.parse(localStorage.getItem("cat3d_cats")||"[]")||[]).forEach(c=>{if(cats[c])selCats.add(c)})}}catch(e){}
+try{{sel=null;(JSON.parse(localStorage.getItem("cat3d_cats")||"[]")||[]).forEach(c=>{if(cats[c])selCats.add(c)})}}catch(e){}
 const $=id=>document.getElementById(id);
 const nNew=D.filter(d=>d.new&&!d.rm).length;
 if(PUBLIC){document.body.classList.add("pub");document.querySelector("header h1").innerHTML=`<span class="brand-mark" aria-hidden="true">3B</span><span class="brand-txt">3B Soluções Criativas<small>Catálogo de peças impressas em 3D</small></span>`;$("sub").innerHTML=`<span class="tipbox"><b>Gostou de algum item?</b> Clique em <b>Compartilhar</b> e envie para o vendedor.</span>`;const lt=$("linha");if(lt){lt.checked=false;lt.closest("label").style.display="none"}}
 else $("sub").textContent=`${NV} modelos, ${D.filter(d=>d.t!==undefined).length} com foto. ${nNew} adicionados na última atualização. Filtre por categoria ou busque por qualquer palavra do nome.`;
 $("hint").textContent=local?"Clique em “Abrir pasta” para ir até os arquivos.":owner?(MOBILE?"Modo PC: “Copiar caminho” copia o endereço da pasta para colar no Explorador.":"“Abrir pasta” abre a pasta do modelo no Explorador."):"";
 function chips(){
-  if(PUBLIC){catPick();return}
+  catPick();return;
   const c=$("chips");c.innerHTML="";
   const mk=(label,val,n)=>{const b=document.createElement("button");b.className="chip";b.type="button";b.setAttribute("aria-pressed",String(sel===val));b.innerHTML=`${label}<b>${n}</b>`;b.onclick=()=>{sel=val;try{val?localStorage.setItem("cat3d",val):localStorage.removeItem("cat3d")}catch(e){};chips();render()};c.appendChild(b)};
   mk("Todas",null,NV);catList.forEach(k=>mk(k,k,cats[k]));
@@ -753,7 +753,7 @@ if(IS_GESTAO){
   $("btnIns").hidden=true;
   const shell=document.createElement("div");shell.className="gshell";
   const side=document.createElement("aside");side.className="gside";
-  side.innerHTML=`<div class="gbrand">3B Soluções - Gestão</div><nav class="gnav" aria-label="Menu"><button type="button" data-v="cat">Catálogo</button><button type="button" data-v="ins">Insumos</button><button type="button" data-v="ped">Pedidos</button><button type="button" data-v="dash">Vendas</button></nav><div class="gcats-h">Categorias</div>`;
+  side.innerHTML=`<div class="gbrand">3B Soluções - Gestão</div><nav class="gnav" aria-label="Menu"><button type="button" data-v="cat">Catálogo</button><button type="button" data-v="ins">Insumos</button><button type="button" data-v="ped">Pedidos</button><button type="button" data-v="dash">Vendas</button></nav>`;
   side.appendChild($("chips"));
   const gm=document.createElement("div");gm.className="gmain";
   const vc=document.createElement("div");vc.id="viewCat";
