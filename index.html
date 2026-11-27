@@ -730,15 +730,19 @@ async function initCost(){
 }
 initCost();
 /* Catálogo público: preços ao vivo vindos das fichas técnicas (Supabase) */
+function linhasPreco(vs){const L=[];(vs||[]).forEach(v=>{if(!v)return;const lab=[v.nome,v.preco_desc].filter(Boolean).join(" – ");
+  if(+v.preco>0)L.push((lab?lab+": ":"")+fmtR(+v.preco));(v.alt||[]).filter(a=>a&&+a.preco>0).forEach(a=>L.push((a.desc?a.desc+": ":"")+fmtR(+a.preco)))});return L}
 if(PUBLIC&&!local){(async()=>{try{
   const B="https://ynxjuziprxtvbupnyvgr.supabase.co/rest/v1/catalogo_publico?select=",H={headers:{apikey:"sb_publishable_jQoOUi-DDrvMxJbPy96Dog_NIY6zJna"}};
   const pega=async c=>{let all=[];for(let o=0;;o+=1000){const r=await fetch(B+c+"&order=id&limit=1000&offset="+o,H);if(!r.ok)return o?all:null;const j=await r.json();if(!Array.isArray(j))return null;all=all.concat(j);if(j.length<1000)return all}};
-  let rows=await pega("id,nome,preco,preco_desc,alt,descricao,midias,capa");
+  let rows=await pega("id,nome,preco,preco_desc,alt,descricao,midias,capa,vars");
+  if(!rows)rows=await pega("id,nome,preco,preco_desc,alt,descricao,midias,capa");
   if(!rows)rows=await pega("id,preco,preco_desc,alt");
   if(!rows)return;
   rows.forEach(x=>{const d=D[x.id-1];if(!d)return;const p=+x.preco||0;
-    if(p>0)d.v=(x.preco_desc?x.preco_desc+": ":"")+fmtR(p);else delete d.v;
-    const va=(x.alt||[]).filter(a=>a&&+a.preco>0).map(a=>(a.desc?a.desc+": ":"")+fmtR(+a.preco));d.va=va;if(!va.length)delete d.va;
+    if(Array.isArray(x.vars)){const L=linhasPreco(x.vars);if(L.length){d.v=L[0];d.va=L.slice(1);if(!d.va.length)delete d.va}else{delete d.v;delete d.va}}
+    else{if(p>0)d.v=(x.preco_desc?x.preco_desc+": ":"")+fmtR(p);else delete d.v;
+    const va=(x.alt||[]).filter(a=>a&&+a.preco>0).map(a=>(a.desc?a.desc+": ":"")+fmtR(+a.preco));d.va=va;if(!va.length)delete d.va}
     if(x.nome)renomeia(d,x.nome);if(x.descricao!=null){d.dsc=x.descricao;idxK(d)}if(Array.isArray(x.midias)&&x.midias.length)d.md=x.midias;if(x.capa)d.capa=x.capa});
   render()}catch(e){}})()}
 
