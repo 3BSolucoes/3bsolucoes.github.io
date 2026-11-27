@@ -730,7 +730,7 @@ async function initCost(){
 }
 initCost();
 /* Catálogo público: preços ao vivo vindos das fichas técnicas (Supabase) */
-function linhasPreco(vs){const L=[];(vs||[]).forEach(v=>{if(!v)return;const lab=[v.nome,v.preco_desc].filter(Boolean).join(" – ");
+function linhasPreco(vs){const L=[];(vs||[]).forEach(v=>{if(!v)return;const lab=[v.nome,v.preco_desc].filter((x,i,A)=>x&&A.indexOf(x)===i).join(" – ");
   if(+v.preco>0)L.push((lab?lab+": ":"")+fmtR(+v.preco));(v.alt||[]).filter(a=>a&&+a.preco>0).forEach(a=>L.push((a.desc?a.desc+": ":"")+fmtR(+a.preco)))});return L}
 if(PUBLIC&&!local){(async()=>{try{
   const B="https://ynxjuziprxtvbupnyvgr.supabase.co/rest/v1/catalogo_publico?select=",H={headers:{apikey:"sb_publishable_jQoOUi-DDrvMxJbPy96Dog_NIY6zJna"}};
